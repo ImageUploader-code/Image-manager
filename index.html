@@ -2,41 +2,46 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Image Manager</title>
-  <script src="https://apis.google.com/js/api.js"></script>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     body {
       background: #121212;
       color: #fff;
       font-family: 'Segoe UI', sans-serif;
+      margin: 0;
       padding: 20px;
     }
+
     .tabs {
       display: flex;
       gap: 10px;
       margin-bottom: 20px;
     }
+
     .tab {
       flex: 1;
       text-align: center;
       background: #222;
       padding: 10px;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
     }
+
     .tab.active {
       background: orange;
       color: black;
       font-weight: bold;
     }
+
     .section {
       display: none;
     }
+
     .section.active {
       display: block;
     }
+
     input, select, button {
       display: block;
       width: 100%;
@@ -46,23 +51,28 @@
       border: none;
       font-size: 14px;
     }
+
     input, select {
       background: #222;
       color: #fff;
     }
+
     button {
       background: orange;
       color: black;
       font-weight: bold;
       cursor: pointer;
     }
+
     .folder-row {
       display: flex;
       gap: 10px;
     }
+
     .folder-row input {
       flex: 1;
     }
+
     img.thumbnail {
       width: 100px;
       height: 100px;
@@ -71,11 +81,13 @@
       border-radius: 8px;
       cursor: zoom-in;
     }
+
     .gallery {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
     }
+
     #imageModal {
       display: none;
       position: fixed;
@@ -86,27 +98,31 @@
       align-items: center;
       z-index: 1000;
     }
+
     #imageModal div {
       position: relative;
       max-width: 90%;
       max-height: 90%;
     }
+
     #modalImage {
       max-width: 100%;
       max-height: 100%;
       border-radius: 10px;
     }
+
     #downloadBtn {
       position: absolute;
       top: 10px;
       left: 10px;
       background: orange;
-      padding: 10px;
+      padding: 8px;
       border-radius: 6px;
       color: black;
       text-decoration: none;
       font-weight: bold;
     }
+
     #closeBtn {
       position: absolute;
       top: 10px;
@@ -121,36 +137,53 @@
       cursor: pointer;
     }
   </style>
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
+  <h2>📁 Shared Image Manager</h2>
+
+  <!-- Google Sign-In -->
+  <div id="signinDiv"></div>
+
+  <!-- Tabs -->
   <div class="tabs">
     <div class="tab active" onclick="showSection('upload')">Upload Images</div>
     <div class="tab" onclick="showSection('view')">View Images</div>
   </div>
 
+  <!-- Upload Section -->
   <div id="upload" class="section active">
     <div class="folder-row">
-      <select id="folderDropdown"><option value="">-- Select Folder --</option></select>
-      <button onclick="toggleNewFolder()">+</button>
+      <select id="folderDropdown">
+        <option value="">-- Select Folder --</option>
+      </select>
+      <button onclick="showNewFolder()">+</button>
     </div>
     <input type="text" id="newFolder" placeholder="New folder name" style="display:none"/>
     <input type="file" id="imageUpload" accept="image/*" />
     <button onclick="uploadImage()">Upload</button>
 
     <h3>🧹 Clear Images</h3>
-    <select id="clearFolder"><option value="">-- Select Folder --</option></select>
+    <select id="clearFolder">
+      <option value="">-- Select Folder --</option>
+    </select>
     <input type="date" id="fromDate" />
     <input type="date" id="toDate" />
     <button onclick="clearImages()">Clear</button>
   </div>
 
+  <!-- View Section -->
   <div id="view" class="section">
-    <select id="viewFolderDropdown"><option value="">-- Select Folder --</option></select>
+    <select id="viewFolderDropdown">
+      <option value="">-- Select Folder --</option>
+    </select>
     <input type="date" id="viewDate" />
     <button onclick="viewImages()">View</button>
     <div id="output" class="gallery"></div>
   </div>
 
+  <!-- Modal -->
   <div id="imageModal">
     <div>
       <img id="modalImage" />
@@ -160,9 +193,40 @@
   </div>
 
   <script>
-    // JavaScript logic will be added here after setting up Google Drive API access
-    // including authentication, upload, fetch, and delete features.
-    // This is just the UI shell.
+    // UI logic
+    function showSection(id) {
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+      document.querySelector(`.tab[onclick="showSection('${id}')"]`).classList.add('active');
+      document.getElementById(id).classList.add('active');
+    }
+
+    function showNewFolder() {
+      document.getElementById('newFolder').style.display = 'block';
+    }
+
+    function openModal(src) {
+      document.getElementById("modalImage").src = src;
+      document.getElementById("downloadBtn").href = src;
+      document.getElementById("imageModal").style.display = "flex";
+    }
+
+    function closeModal() {
+      document.getElementById("imageModal").style.display = "none";
+    }
+
+    // Placeholder for Drive logic
+    function uploadImage() {
+      alert("⚠️ Upload to Google Drive not yet connected.");
+    }
+
+    function viewImages() {
+      alert("⚠️ Image listing from Google Drive not yet connected.");
+    }
+
+    function clearImages() {
+      alert("⚠️ Image clearing from Google Drive not yet connected.");
+    }
   </script>
 </body>
 </html>
