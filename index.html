@@ -1,17 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Drive Image Manager</title>
   <script src="https://apis.google.com/js/api.js"></script>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: #121212;
+      background-color: #121212;
       color: white;
+      font-family: 'Segoe UI', sans-serif;
       padding: 20px;
     }
     .tabs {
@@ -21,10 +19,10 @@
     }
     .tab {
       flex: 1;
-      padding: 12px;
-      background: #1f1f1f;
       text-align: center;
-      border-radius: 8px;
+      background: #222;
+      padding: 10px;
+      border-radius: 6px;
       cursor: pointer;
     }
     .tab.active {
@@ -32,15 +30,20 @@
       color: black;
       font-weight: bold;
     }
-    .section { display: none; }
-    .section.active { display: block; }
+    .section {
+      display: none;
+    }
+    .section.active {
+      display: block;
+    }
     input, select, button {
+      display: block;
       width: 100%;
       margin: 10px 0;
       padding: 10px;
-      font-size: 16px;
-      border-radius: 6px;
+      border-radius: 5px;
       border: none;
+      font-size: 14px;
     }
     input, select {
       background: #222;
@@ -59,203 +62,112 @@
     .folder-row input {
       flex: 1;
     }
+    img.thumbnail {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      margin: 5px;
+      border-radius: 8px;
+      cursor: zoom-in;
+    }
     .gallery {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
     }
-    img.thumbnail {
-      width: 100px;
-      height: 100px;
-      object-fit: cover;
-      border-radius: 6px;
-      cursor: zoom-in;
-    }
     #imageModal {
       display: none;
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.9);
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.8);
       justify-content: center;
       align-items: center;
-      z-index: 9999;
+      z-index: 1000;
     }
-    #imageModal img {
-      max-width: 90vw;
-      max-height: 90vh;
+    #imageModal div {
+      position: relative;
+      max-width: 90%;
+      max-height: 90%;
+    }
+    #modalImage {
+      max-width: 100%;
+      max-height: 100%;
       border-radius: 10px;
     }
-    #downloadBtn, #closeBtn {
+    #downloadBtn {
       position: absolute;
+      top: 10px;
+      left: 10px;
       background: orange;
-      color: black;
-      font-weight: bold;
-      padding: 6px 10px;
+      padding: 10px;
       border-radius: 6px;
+      color: black;
+      text-decoration: none;
+      font-weight: bold;
     }
-    #downloadBtn { top: 10px; left: 10px; text-decoration: none; }
     #closeBtn {
-      top: 10px; right: 10px;
+      position: absolute;
+      top: 10px;
+      right: 10px;
       background: red;
-      color: white;
+      padding: 6px 10px;
+      border: none;
       border-radius: 50%;
-      width: 24px;
-      height: 24px;
-      text-align: center;
-      line-height: 24px;
-      font-size: 14px;
+      color: white;
+      font-weight: bold;
+      font-size: 12px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('upload')">Upload Images</div>
-    <div class="tab" onclick="switchTab('view')">View Images</div>
+    <div class="tab active" onclick="showSection('upload')">Upload Images</div>
+    <div class="tab" onclick="showSection('view')">View Images</div>
   </div>
 
   <div id="upload" class="section active">
     <div class="folder-row">
-      <select id="folderSelect"></select>
-      <button onclick="createFolder()">+</button>
+      <select id="folderDropdown"><option value="">-- Select Folder --</option></select>
+      <button onclick="toggleNewFolder()">+</button>
     </div>
-    <input type="file" id="imageFile" accept="image/*" />
-    <button onclick="uploadToDrive()">Upload</button>
-
-    <h3>🧹 Clear Images</h3>
-    <select id="clearFolder"></select>
-    <input type="date" id="fromDate" />
-    <input type="date" id="toDate" />
-    <button onclick="clearImages()">Clear</button>
+    <input type="text" id="newFolder" placeholder="New folder name" style="display:none"/>
+    <input type="file" id="imageUpload" accept="image/*" />
+    <button onclick="uploadImage()">Upload</button>
   </div>
 
   <div id="view" class="section">
-    <select id="viewFolder"></select>
+    <select id="viewFolderDropdown"><option value="">-- Select Folder --</option></select>
     <input type="date" id="viewDate" />
-    <button onclick="viewFromDrive()">View</button>
-    <div id="gallery" class="gallery"></div>
+    <button onclick="viewImages()">View</button>
+    <div id="output" class="gallery"></div>
   </div>
 
   <div id="imageModal">
-    <img id="modalImage" />
-    <a id="downloadBtn" href="#" download>⬇</a>
-    <div id="closeBtn" onclick="closeModal()">×</div>
+    <div>
+      <img id="modalImage" />
+      <a id="downloadBtn" download="image.png">⬇</a>
+      <button id="closeBtn" onclick="closeModal()">✖</button>
+    </div>
   </div>
 
   <script>
-    const CLIENT_ID = '241803190796-uea4vmu07egsbgpq55jpj5tbm6h8kn78.apps.googleusercontent.com';
-    const FOLDER_ID = '15wJu1HhnI_hrZ-3K2o0pGSgYIc2a5hmX';
-    let tokenClient, gapiInited = false, gisInited = false;
-
-    function switchTab(tab) {
+    function showSection(section) {
       document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.getElementById(tab).classList.add('active');
-      document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+      document.getElementById(section).classList.add('active');
+      document.querySelector(`.tab[onclick="showSection('${section}')"]`).classList.add('active');
     }
 
-    function gapiLoaded() {
-      gapi.load('client', initializeGapiClient);
+    function toggleNewFolder() {
+      const input = document.getElementById("newFolder");
+      input.style.display = input.style.display === "none" ? "block" : "none";
     }
 
-    async function initializeGapiClient() {
-      await gapi.client.init({
-        apiKey: '',
-        discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"]
-      });
-      gapiInited = true;
-      maybeEnableFeatures();
-    }
-
-    function gisLoaded() {
-      tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly',
-        callback: (tokenResponse) => {
-          gapi.client.setToken(tokenResponse);
-          loadFolders();
-        },
-      });
-      gisInited = true;
-      maybeEnableFeatures();
-    }
-
-    function maybeEnableFeatures() {
-      if (gapiInited && gisInited) {
-        tokenClient.requestAccessToken();
-      }
-    }
-
-    function createFolder() {
-      const name = prompt("Enter folder name:");
-      if (!name) return;
-      const metadata = {
-        name,
-        mimeType: 'application/vnd.google-apps.folder',
-        parents: [FOLDER_ID],
-      };
-      gapi.client.drive.files.create({
-        resource: metadata,
-        fields: 'id,name'
-      }).then(loadFolders);
-    }
-
-    function loadFolders() {
-      gapi.client.drive.files.list({
-        q: `'${FOLDER_ID}' in parents and mimeType='application/vnd.google-apps.folder'`,
-        fields: 'files(id, name)',
-      }).then(res => {
-        const options = res.result.files.map(f => `<option value="${f.id}">${f.name}</option>`);
-        document.getElementById("folderSelect").innerHTML = '<option value="">-- Select Folder --</option>' + options.join('');
-        document.getElementById("viewFolder").innerHTML = document.getElementById("clearFolder").innerHTML = document.getElementById("folderSelect").innerHTML;
-      });
-    }
-
-    function uploadToDrive() {
-      const file = document.getElementById("imageFile").files[0];
-      const folderId = document.getElementById("folderSelect").value;
-      if (!file || !folderId) return alert("Select folder and image.");
-
-      const metadata = {
-        name: file.name,
-        parents: [folderId],
-      };
-
-      const form = new FormData();
-      form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-      form.append("file", file);
-
-      fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-        method: "POST",
-        headers: new Headers({ 'Authorization': `Bearer ${gapi.auth.getToken().access_token}` }),
-        body: form
-      }).then(() => alert("✅ Uploaded"));
-    }
-
-    function viewFromDrive() {
-      const folderId = document.getElementById("viewFolder").value;
-      const dateStr = document.getElementById("viewDate").value;
-      if (!folderId || !dateStr) return alert("Select folder and date");
-
-      gapi.client.drive.files.list({
-        q: `'${folderId}' in parents and mimeType contains 'image/'`,
-        fields: 'files(id, name)',
-      }).then(res => {
-        const gallery = document.getElementById("gallery");
-        gallery.innerHTML = '';
-        res.result.files.forEach(file => {
-          const img = document.createElement("img");
-          img.className = "thumbnail";
-          img.src = `https://drive.google.com/uc?id=${file.id}`;
-          img.onclick = () => openModal(file.id);
-          gallery.appendChild(img);
-        });
-      });
-    }
-
-    function openModal(fileId) {
-      const imgUrl = `https://drive.google.com/uc?id=${fileId}`;
-      document.getElementById("modalImage").src = imgUrl;
-      document.getElementById("downloadBtn").href = imgUrl;
+    function openModal(src) {
+      document.getElementById("modalImage").src = src;
+      document.getElementById("downloadBtn").href = src;
       document.getElementById("imageModal").style.display = "flex";
     }
 
@@ -263,14 +175,22 @@
       document.getElementById("imageModal").style.display = "none";
     }
 
-    function clearImages() {
-      alert("🔒 Due to Drive API limitations, auto-deleting by date is not allowed from shared folder. Delete manually in Drive interface.");
+    document.getElementById("imageUpload").addEventListener("change", e => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = event => window.uploadedImage = event.target.result;
+        reader.readAsDataURL(file);
+      }
+    });
+
+    function uploadImage() {
+      alert("This version only shows UI; Drive upload requires backend/API integration.");
     }
 
-    window.gapiLoaded = gapiLoaded;
-    window.gisLoaded = gisLoaded;
+    function viewImages() {
+      alert("This version only shows UI; Drive listing requires API integration.");
+    }
   </script>
-  <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
-  <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 </body>
 </html>
